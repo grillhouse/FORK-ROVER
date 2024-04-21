@@ -6,14 +6,14 @@
 class MotorControl {
 public:
     MotorControl(int fwdPin, int bwdPin);
-    void begin(int freq = 5000, int resolution = 8); // Default frequency and resolution
-    void setMotor(int speed, bool forward); // Sets both speed and direction
+    void begin(int freq = 5000, int resolution = 8);
+    void setMotor(int speed, bool forward); 
     void stop();
 
 private:
     int _fwdPin, _bwdPin;
-    int _fwdChannel = 0;  // PWM channel for forward
-    int _bwdChannel = 1;  // PWM channel for backward
+    int _fwdChannel = 0;  
+    int _bwdChannel = 1;  
 };
 
-#endif // MOTORCONTROL_H
+#endif 
