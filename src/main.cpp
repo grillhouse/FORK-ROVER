@@ -1,100 +1,59 @@
+#include "HolonomicRobot.h"
 #include <Arduino.h>
-#include <AccelStepper.h>
-#include "OmniRobot.h"
-#include "OmniStepper.h"
+#include <ESP32Encoder.h>
 
-// put function declarations here:
-int myFunction(int, int);
+// Define motor control pins
+HolonomicRobot robot(5, 18, 32, 35, 25, 33);
 
-//Exampl Pins
-const int stepPinLF = 2;  
-const int dirPinLF = 3;   
-const int stepPinRF = 4;
-const int dirPinRF = 5;    
-const int stepPinB = 6;
-const int dirPinB = 7;
+// Define encoder pins
+#define CLK1 16 // CLK pin for encoder 1
+#define DT1 17  // DT pin for encoder 1
+#define CLK2 27 // CLK pin for encoder 2
+#define DT2 26  // DT pin for encoder 2
+#define CLK3 12 // CLK pin for encoder 3
+#define DT3 14  // DT pin for encoder 3
 
-const float wheelDiameter = 0.08;     // Wheel diameter in meters
-const int stepsPerRevolution = 200;   // Steps per revolution of the stepper motors
+// Create instances of ESP32Encoder
+ESP32Encoder encoder1;
+ESP32Encoder encoder2;
+ESP32Encoder encoder3;
 
-AccelStepper stepperLF(AccelStepper::DRIVER, stepPinLF, dirPinLF);
-AccelStepper stepperRF(AccelStepper::DRIVER, stepPinRF, dirPinRF);
-AccelStepper stepperB(AccelStepper::DRIVER, stepPinB, dirPinB);
+void setup() {
+    // Start the serial connection
+    Serial.begin(115200);
 
-OmniRobot robot(wheelDiameter, stepsPerRevolution);
-OmniStepper omniStepper(stepperLF, stepperRF, stepperB);
+    // Initialize robot
+    robot.begin();
 
-void setup()
-{
-
-  stepperLF.setMaxSpeed(1000);
-  stepperLF.setAcceleration(500);
-  stepperRF.setMaxSpeed(1000);
-  stepperRF.setAcceleration(500);
-  stepperB.setMaxSpeed(1000);
-  stepperB.setAcceleration(500);
-
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    // Attach encoders and reset count
+    encoder1.attachHalfQuad(DT1, CLK1);
+    encoder1.setCount(0);
+    encoder2.attachHalfQuad(DT2, CLK2);
+    encoder2.setCount(0);
+    encoder3.attachHalfQuad(DT3, CLK3);
+    encoder3.setCount(0);
 }
 
-void loop()
-{
-      // Example Position Vector
-    float distance = 0.5;   // Distance in meters
-    float angle = 45.0;     // Angle in degrees
+void loop() {
+    // Variables to store the current encoder positions
+    long newPosition1, newPosition2, newPosition3;
 
+    // Move the robot in a circular path
+    for (int i = 0; i < 360; i += 10) {
+        robot.moveRobot(350, i, 0);
+        newPosition1 = encoder1.getCount() / 2; // Read encoder 1 position
+        newPosition2 = encoder2.getCount() / 2; // Read encoder 2 position
+        newPosition3 = encoder3.getCount() / 2; // Read encoder 3 position
+        Serial.print("Encoder 1: ");
+        Serial.print(newPosition1);
+        Serial.print(", Encoder 2: ");
+        Serial.print(newPosition2);
+        Serial.print(", Encoder 3: ");
+        Serial.println(newPosition3);
+        delay(100);
+    }
 
-
-
+    // Stop the robot and pause for a moment
+    robot.stop();
+    delay(1000); // Wait before the next loop
 }
-
-// put function definitions here:
-int myFunction(int x, int y)
-{
-  return x + y;
-}
-
-// ------   Example From Library showing multiple steppers... How it was used to create the class / objects ------//
-
-    // // MultiStepper.pde
-    // // -*- mode: C++ -*-
-    // //
-    // // Shows how to multiple simultaneous steppers
-    // // Runs one stepper forwards and backwards, accelerating and decelerating
-    // // at the limits. Runs other steppers at the same time
-    // //
-    // // Copyright (C) 2009 Mike McCauley
-    // // $Id: MultiStepper.pde,v 1.1 2011/01/05 01:51:01 mikem Exp mikem $
-
-    // #include <AccelStepper.h>
-
-    // // Define some steppers and the pins the will use
-    // AccelStepper stepper1; // Defaults to AccelStepper::FULL4WIRE (4 pins) on 2, 3, 4, 5
-    // AccelStepper stepper2(AccelStepper::FULL4WIRE, 6, 7, 8, 9);
-    // AccelStepper stepper3(AccelStepper::FULL2WIRE, 10, 11);
-
-    // void setup()
-    // {
-    //     stepper1.setMaxSpeed(200.0);
-    //     stepper1.setAcceleration(100.0);
-    //     stepper1.moveTo(24);
-
-    //     stepper2.setMaxSpeed(300.0);
-    //     stepper2.setAcceleration(100.0);
-    //     stepper2.moveTo(1000000);
-
-    //     stepper3.setMaxSpeed(300.0);
-    //     stepper3.setAcceleration(100.0);
-    //     stepper3.moveTo(1000000);
-    // }
-
-    // void loop()
-    // {
-    //     // Change direction at the limits
-    //     if (stepper1.distanceToGo() == 0)
-    // 	stepper1.moveTo(-stepper1.currentPosition());
-    //     stepper1.run();
-    //     stepper2.run();
-    //     stepper3.run();
-    // }
