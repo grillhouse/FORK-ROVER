@@ -44,8 +44,9 @@ implemented with calcs of circumferenc e*/
 
 // different movements to test the robot... 
 
-    robot.moveRobot(200, 0, 0); // magnitude = 200, theta = 0, rotATION = 0   Position vector with rotation proving difficult
-    delay(1000);
+    robot.moveRobot(200, 0, 0); // magnitude (speed to move) = 200, theta( direction) = 0, rotATION (twist) = 0   
+    //   ...Position vector with rotation proving difficult to debug
+    delay(1500);
 
 
     robot.stop();
@@ -53,27 +54,27 @@ implemented with calcs of circumferenc e*/
 
 
     robot.moveRobot(200, 180, 0);
-    delay(1000);
+    delay(1500);
 
 
     robot.stop();
     delay(1000);
 
     robot.moveRobot(0, 0, 150);
-    delay(1000);
+    delay(1500);
 
 
     robot.stop();
     delay(1000);
 
     robot.moveRobot(0, 0, -150);
-    delay(1000);
+    delay(1500);
 
     robot.stop();
     delay(1000);
 
     robot.moveRobot(200, 45, 0);
-    delay(1000);
+    delay(1500);
 
     robot.stop();
     delay(1000);
