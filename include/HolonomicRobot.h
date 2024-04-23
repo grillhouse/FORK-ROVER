@@ -1,45 +1,33 @@
-#ifndef HOLONOMICROBOT_H
-#define HOLONOMICROBOT_H
+#ifndef HolonomicRobot_h
+#define HolonomicRobot_h
 
-#include "MotorControl.h"
+#include <ESP32MX1508.h>
 #include <ESP32Encoder.h>
+#include <PID_v1.h>
 
-class HolonomicRobot : public MotorControl {
+class HolonomicRobot {
 public:
-    HolonomicRobot(int fwdPin1, int bwdPin1, int fwdPin2, int bwdPin2, int fwdPin3, int bwdPin3);
-    void begin(int freq = 30000, int resolution = 8);
+    HolonomicRobot(int pin1A, int pin1B, int pin2A, int pin2B, int pin3A, int pin3B);
+    void begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A, int enc3B);
     void moveRobot(float magnitude, float theta, int rot);
-    void attachEncoder1(int dt, int clk);
-    void attachEncoder2(int dt, int clk);
-    void attachEncoder3(int dt, int clk);
-    long getEncoder1Count();
-    long getEncoder2Count();
-    long getEncoder3Count();
-        void setPIDTunings(float kp, float ki, float kd);
-    void updatePID();
+    void stop();
+    void setPIDTunings(double kp, double ki, double kd);
 
 private:
-    int _fwdPin2;
-    int _bwdPin2;
-    int _fwdPin3;
-    int _bwdPin3;
-    int _fwdChannel2;
-    int _bwdChannel2;
-    int _fwdChannel3;
-    int _bwdChannel3;
+    MX1508 _motor1;
+    MX1508 _motor2;
+    MX1508 _motor3;
     ESP32Encoder _encoder1;
     ESP32Encoder _encoder2;
     ESP32Encoder _encoder3;
-
-        float _kp;
-    float _ki;
-    float _kd;
-    long _prevError1;
-    long _prevError2;
-    long _prevError3;
-    long _integral1;
-    long _integral2;
-    long _integral3;
+    PID _pid1;
+    PID _pid2;
+    PID _pid3;
+    double _setpoint1, _input1, _output1;
+    double _setpoint2, _input2, _output2;
+    double _setpoint3, _input3, _output3;
+    long _prevEncoderCount1, _prevEncoderCount2, _prevEncoderCount3;
+    unsigned long _lastTime;
 };
 
 #endif

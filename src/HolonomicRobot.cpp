@@ -1,116 +1,79 @@
+#include <ESP32MX1508.h>
+#include <ESP32Encoder.h>
+#include <PID_v1.h>
 #include "HolonomicRobot.h"
-#include <Arduino.h>
 
-HolonomicRobot::HolonomicRobot(int fwdPin1, int bwdPin1, int fwdPin2, int bwdPin2, int fwdPin3, int bwdPin3)
-    : MotorControl(fwdPin1, bwdPin1), _fwdPin2(fwdPin2), _bwdPin2(bwdPin2), _fwdPin3(fwdPin3), _bwdPin3(bwdPin3) {
-    _fwdChannel2 = 2;
-    _bwdChannel2 = 3;
-    _fwdChannel3 = 4;
-    _bwdChannel3 = 5;
-}
+HolonomicRobot::HolonomicRobot(int pin1A, int pin1B, int pin2A, int pin2B, int pin3A, int pin3B)
+    : _motor1(pin1A, pin1B, 0, 1), _motor2(pin2A, pin2B, 2, 3), _motor3(pin3A, pin3B, 4, 5),
+      _pid1(&_input1, &_output1, &_setpoint1, 0, 0, 0, DIRECT),
+      _pid2(&_input2, &_output2, &_setpoint2, 0, 0, 0, DIRECT),
+      _pid3(&_input3, &_output3, &_setpoint3, 0, 0, 0, DIRECT),
+      _lastTime(0) {}
 
-void HolonomicRobot::begin(int freq, int resolution) {
-    MotorControl::begin(freq, resolution);
-    ledcSetup(_fwdChannel2, freq, resolution);
-    ledcAttachPin(_fwdPin2, _fwdChannel2);
-    ledcSetup(_bwdChannel2, freq, resolution);
-    ledcAttachPin(_bwdPin2, _bwdChannel2);
-    ledcSetup(_fwdChannel3, freq, resolution);
-    ledcAttachPin(_fwdPin3, _fwdChannel3);
-    ledcSetup(_bwdChannel3, freq, resolution);
-    ledcAttachPin(_bwdPin3, _bwdChannel3);
+void HolonomicRobot::begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A, int enc3B) {
+    _encoder1.attachHalfQuad(enc1A, enc1B);
+    _encoder2.attachHalfQuad(enc2A, enc2B);
+    _encoder3.attachHalfQuad(enc3A, enc3B);
+    _pid1.SetMode(AUTOMATIC);
+    _pid2.SetMode(AUTOMATIC);
+    _pid3.SetMode(AUTOMATIC);
+    _lastTime = millis();
 }
 
 void HolonomicRobot::moveRobot(float magnitude, float theta, int rot) {
     theta = theta * 0.0174533; // deg to rad
-    float vel_x = magnitude * cos(theta); // cartesian coordinates
+    float vel_x = magnitude * cos(theta); // cartesian 
     float vel_y = magnitude * sin(theta);
-
-    const float sqrt3o2 = 1.0 * sqrt(3) / 2; // Vel xy from polar to cartesian
+    const float sqrt3o2 = 1.0 * sqrt(3) / 2; // v from rcos to to cartesian
     float v1 = -vel_x + rot;
     float v2 = 0.5 * vel_x - sqrt3o2 * vel_y + rot;
     float v3 = 0.5 * vel_x + sqrt3o2 * vel_y + rot;
 
-    int d1 = v1 < 0 ? -1 : 1;   // distance or velocity
-    int d2 = v2 < 0 ? -1 : 1;
-    int d3 = v3 < 0 ? -1 : 1;
+    _setpoint1 = map(abs(v1), 0, 100, 0, 255) * (v1 < 0 ? -1 : 1);
+    _setpoint2 = map(abs(v2), 0, 100, 0, 255) * (v2 < 0 ? -1 : 1);
+    _setpoint3 = map(abs(v3), 0, 100, 0, 255) * (v3 < 0 ? -1 : 1);
 
-    v1 = map(abs(v1), 0, 100, 0, 255);
-    v2 = map(abs(v2), 0, 100, 0, 255);
-    v3 = map(abs(v3), 0, 100, 0, 255);
+    unsigned long currentTime = millis();
+    float deltaTime = (currentTime - _lastTime) / 1000.0; //secs
+    _lastTime = currentTime;
 
-    setMotor(v1, d1 > 0);
-    ledcWrite(_fwdChannel2, d2 > 0 ? v2 : 0); // ESP32 analog out
-    ledcWrite(_bwdChannel2, d2 < 0 ? v2 : 0);
-    ledcWrite(_fwdChannel3, d3 > 0 ? v3 : 0);
-    ledcWrite(_bwdChannel3, d3 < 0 ? v3 : 0);
+    long encoderCount1 = _encoder1.getCount();
+    long encoderCount2 = _encoder2.getCount();
+    long encoderCount3 = _encoder3.getCount();
+
+    float speed1 = (encoderCount1 - _prevEncoderCount1) / deltaTime;
+    float speed2 = (encoderCount2 - _prevEncoderCount2) / deltaTime;
+    float speed3 = (encoderCount3 - _prevEncoderCount3) / deltaTime;
+
+    _prevEncoderCount1 = encoderCount1;
+    _prevEncoderCount2 = encoderCount2;
+    _prevEncoderCount3 = encoderCount3;
+
+    _input1 = speed1;
+    _input2 = speed2;
+    _input3 = speed3;
+
+    _pid1.Compute();
+    _pid2.Compute();
+    _pid3.Compute();
+
+    int motorSpeed1 = constrain(_output1, -255, 255);
+    int motorSpeed2 = constrain(_output2, -255, 255);
+    int motorSpeed3 = constrain(_output3, -255, 255);
+
+    _motor1.motorGo(motorSpeed1);
+    _motor2.motorGo(motorSpeed2);
+    _motor3.motorGo(motorSpeed3);
 }
 
-//encoders counting below
-
-
-void HolonomicRobot::attachEncoder1(int dt, int clk) {
-    _encoder1.attachHalfQuad(dt, clk);
-    _encoder1.setCount(0);
+void HolonomicRobot::stop() {
+    _motor1.motorBrake();
+    _motor2.motorBrake();
+    _motor3.motorBrake();
 }
 
-void HolonomicRobot::attachEncoder2(int dt, int clk) {
-    _encoder2.attachHalfQuad(dt, clk);
-    _encoder2.setCount(0);
-}
-
-void HolonomicRobot::attachEncoder3(int dt, int clk) {
-    _encoder3.attachHalfQuad(dt, clk);
-    _encoder3.setCount(0);
-}
-
-long HolonomicRobot::getEncoder1Count() {
-    return _encoder1.getCount() / 2;
-}
-
-long HolonomicRobot::getEncoder2Count() {
-    return _encoder2.getCount() / 2;
-}
-
-long HolonomicRobot::getEncoder3Count() {
-    return _encoder3.getCount() / 2;
-}
-
-// PID stuff below
-void HolonomicRobot::setPIDTunings(float kp, float ki, float kd) {
-    _kp = kp;
-    _ki = ki;
-    _kd = kd;
-}
-
-void HolonomicRobot::updatePID() {
-    long currentCount1 = _encoder1.getCount();
-    long currentCount2 = _encoder2.getCount();
-    long currentCount3 = _encoder3.getCount();
-
-    long error1 = currentCount1 - getEncoder1Count();
-    long error2 = currentCount2 - getEncoder2Count();
-    long error3 = currentCount3 - getEncoder3Count();
-
-    _integral1 += error1;
-    _integral2 += error2;
-    _integral3 += error3;
-
-    long derivative1 = error1 - _prevError1;
-    long derivative2 = error2 - _prevError2;
-    long derivative3 = error3 - _prevError3;
-
-    int speed1 = _kp * error1 + _ki * _integral1 + _kd * derivative1;
-    int speed2 = _kp * error2 + _ki * _integral2 + _kd * derivative2;
-    int speed3 = _kp * error3 + _ki * _integral3 + _kd * derivative3;
-
-    setMotor(speed1, speed1 > 0);
-    ledcWrite(_fwdChannel2, speed2 > 0 ? speed2 : 0);
-    ledcWrite(_bwdChannel2, speed2 < 0 ? -speed2 : 0);
-    ledcWrite(_fwdChannel3, speed3 > 0 ? speed3 : 0);
-    ledcWrite(_bwdChannel3, speed3 < 0 ? -speed3 : 0);
-
-    _prevError1 = error1;
-    _prevError2 = error2;
-    _prevError3 = error3;
+void HolonomicRobot::setPIDTunings(double kp, double ki, double kd) {
+    _pid1.SetTunings(kp, ki, kd);
+    _pid2.SetTunings(kp, ki, kd);
+    _pid3.SetTunings(kp, ki, kd);
 }
