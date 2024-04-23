@@ -4,7 +4,7 @@
 #include <PID_v1.h>
 #include "HolonomicRobot.h"
 
-// Define the pins for motors and encoders
+
 const int PIN_MOTOR1A = 33;
 const int PIN_MOTOR1B = 25;
 const int PIN_MOTOR2A = 26;
@@ -18,14 +18,14 @@ const int PIN_ENC2B = 34;
 const int PIN_ENC3A = 4;
 const int PIN_ENC3B = 36;
 
-// Create an instance of the HolonomicRobot class
+
 HolonomicRobot robot(PIN_MOTOR1A, PIN_MOTOR1B, PIN_MOTOR2A, PIN_MOTOR2B, PIN_MOTOR3A, PIN_MOTOR3B);
 
 void setup() {
-    // Initialize the robot with encoder pins
+   
     robot.begin(PIN_ENC1A, PIN_ENC1B, PIN_ENC2A, PIN_ENC2B, PIN_ENC3A, PIN_ENC3B);
 
-    // Set the PID tuning parameters (adjust as needed)
+
     double kp = 2.0;
     double ki = 5.0;
     double kd = 1.0;
