@@ -48,8 +48,8 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     vector F3(0.866, 0.500);   // Vector pointing 240 degrees counter-clockwise
 
     // Robot-specific constants
-    double b = 0.090; // Wheelbase
-    double r = 0.020; // Wheel radius
+    double b = 0.10; // Wheelbase from center to wheel in meters
+    double r = 0.070; // Wheel radius
 
     // Calculate wheel speeds using dot product of direction vector and wheel orientation vectors
     // Plus the contribution from angular velocity omega
@@ -78,10 +78,19 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     long encoderCount2 = _encoder2.getCount();
     long encoderCount3 = _encoder3.getCount();
 
+    // // Calculate wheel speeds in counts per second
+    // float speed1 = (encoderCount1 - _prevEncoderCount1) / deltaTime;
+    // float speed2 = (encoderCount2 - _prevEncoderCount2) / deltaTime;
+    // float speed3 = (encoderCount3 - _prevEncoderCount3) / deltaTime;
+
     // Calculate wheel speeds in counts per second
-    float speed1 = (encoderCount1 - _prevEncoderCount1) / deltaTime;
-    float speed2 = (encoderCount2 - _prevEncoderCount2) / deltaTime;
-    float speed3 = (encoderCount3 - _prevEncoderCount3) / deltaTime;
+    float rotations1 = (encoderCount1 - _prevEncoderCount1) / 2400.0;
+    float rotations2 = (encoderCount2 - _prevEncoderCount2) / 2400.0;
+    float rotations3 = (encoderCount3 - _prevEncoderCount3) / 2400.0;
+
+    float speed1 = (rotations1 * r) / deltaTime; // Speed in m/s
+    float speed2 = (rotations2 * r) / deltaTime; // Speed in m/s
+    float speed3 = (rotations3 * r) / deltaTime; // Speed in m/s
 
     // Update previous encoder counts with the current counts
     _prevEncoderCount1 = encoderCount1;
@@ -89,16 +98,17 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     _prevEncoderCount3 = encoderCount3;
 
     // Set PID inputs to the calculated wheel speeds
-    _input1 = speed1;
-    _input2 = speed2;
-    _input3 = speed3;
+    float S = 255/6; // 255 is the max motor PWM speed, 6 is the max wheel speed m/s
+    _input1 = speed1*S;
+    _input2 = speed2*S;
+    _input3 = speed3*S;
 
     // Compute PID outputs to adjust motor speeds
     _pid1.Compute();
     _pid2.Compute();
     _pid3.Compute();
 
-    // Constrain PID outputs to be within motor input range (-255 to 255)
+    // Constrain PID outputs to be within motor input range (-255 to 255). (Overflow prevention)
     int motorOutput1 = constrain(_output1, -255, 255);
     int motorOutput2 = constrain(_output2, -255, 255);
     int motorOutput3 = constrain(_output3, -255, 255);
@@ -130,7 +140,7 @@ void OmniDrive::stop()
     Serial.println("Robot stopped");
 }
 
-// Set PID tunings for all motors
+// Set PID tunings for all motors at once. Might Update to set individual PID tunings if there are large inconsistencies in motor performance
 void OmniDrive::setPIDTunings(double kp, double ki, double kd)
 {
     _pid1.SetTunings(kp, ki, kd);

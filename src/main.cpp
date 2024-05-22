@@ -2,80 +2,64 @@
 #include <ESP32MX1508.h>
 #include <ESP32Encoder.h>
 #include <PID_v1.h>
-#include "HolonomicRobot.h"
+#include "OmniDrive.h"
 
-// Motor Pins  currently ESP32MX1508 used, but its just driving L986N drivers that are always activeated 
-const int PIN_MOTOR1A = 33;
-const int PIN_MOTOR1B = 25;
-const int PIN_MOTOR2A = 26;
-const int PIN_MOTOR2B = 27;
-const int PIN_MOTOR3A = 14;
-const int PIN_MOTOR3B = 12;
+// Motor pins
+const int motor1A = 4;
+const int motor1B = 16;
+const int motor2A = 21;
+const int motor2B = 19;
+const int motor3A = 27;
+const int motor3B = 26;
 
-// Encoder Librayr makes it much easier to read the encoders. Initial tests with interrupts were much harder to debug
-const int PIN_ENC1A = 35;
-const int PIN_ENC1B = 32;
-const int PIN_ENC2A = 39;
-const int PIN_ENC2B = 34;
-const int PIN_ENC3A = 4;
-const int PIN_ENC3B = 36;
+// Encoder pins
+const int encoder1A = 15;   //yellow
+const int encoder1B = 2;    //white
+const int encoder2A = 22;
+const int encoder2B = 23;
+const int encoder3A = 13;
+const int encoder3B = 12;
 
-// wierdly designed class, probably should move encoder pins to this fucntion, and then begin would take no arguments but this works
-HolonomicRobot robot(PIN_MOTOR1A, PIN_MOTOR1B, PIN_MOTOR2A, PIN_MOTOR2B, PIN_MOTOR3A, PIN_MOTOR3B);
+
+const float wheelRadius = 0.062; // Example radius in meters 62mm
+
+
+int delayTime = 2000;
+int currentTime = 0;
+
+
+OmniDrive omniDrive(motor1A, motor1B, motor2A, motor2B, motor3A, motor3B, wheelRadius);
+
+
+MX1508 MotorL(0, 0, 0, 0);
 
 void setup() {
-   //begin with encoder pins
-    robot.begin(PIN_ENC1A, PIN_ENC1B, PIN_ENC2A, PIN_ENC2B, PIN_ENC3A, PIN_ENC3B);
 
-    // this resulted in some overshoots, more tuning needed. also, inimum rotation speed is not set, needs to be calculated
-    double kp = 0.8;
-    double ki = 0.1;
-    double kd = 0.01;
-    robot.setPIDTunings(kp, ki, kd);
+    omniDrive.begin(encoder1A, encoder1B, encoder2A, encoder2B, encoder3A, encoder3B);
+
+
+    omniDrive.setPIDTunings(1.0, 0.1, 0.01); //PID Vals
 }
 
 void loop() {
 
+    currentTime = millis();
+    if (currentTime < delayTime) {         //Vx = 1.0 m/s, Vy = 0, omega = 0 rad/s
+        omniDrive.moveRobot(1.0, 0, 0);
+    } else if (currentTime < 2 * delayTime) { //Vx = 0, Vy = 1.0 m/s, omega = 0 rad/s
+        omniDrive.moveRobot(0, 1.0, 0);
+    } else if (currentTime < 3 * delayTime) { //Vx = -1.0 m/s, Vy = 0, omega = 0 rad/s
+        omniDrive.moveRobot(-1.0, 0, 0);
+    } else if (currentTime < 4 * delayTime) { //Vx = 0, Vy = -1.0 m/s, omega = 0 rad/s
+        omniDrive.moveRobot(0, -1.0, 0);
+    } else if (currentTime < 5 * delayTime) {   //rotation 2 rad/s
+        omniDrive.moveRobot(0, 0, 2.0);
+    } else if (currentTime < 6 * delayTime) {   //rotation -2 rad/s
+        omniDrive.moveRobot(0, 0, -2.0);
+    } else if (currentTime < 7 * delayTime){    //reset robot and stop moving
+        currentTime = 0;
+        omniDrive.stop();
+    } else currentTime = 0; // Stop robot in error
+    delay(100);    
 
-/* Taken all distance measuring logic out for now. The distance measuring class will be added with another PID
-That will measure the distance and direction. Currently finding it difficult to do with rotation, but need to back encoder
- read back through the same maths... Speed will also be 
-implemented with calcs of circumferenc e*/
-
-// different movements to test the robot... 
-
-    robot.moveRobot(200, 0, 0); // magnitude (speed to move) = 200, theta( direction) = 0, rotATION (twist) = 0   
-    //   ...Position vector with rotation proving difficult to debug
-    delay(1500);
-
-
-    robot.stop();
-    delay(1000);
-
-
-    robot.moveRobot(200, 180, 0);
-    delay(1500);
-
-
-    robot.stop();
-    delay(1000);
-
-    robot.moveRobot(0, 0, 150);
-    delay(1500);
-
-
-    robot.stop();
-    delay(1000);
-
-    robot.moveRobot(0, 0, -150);
-    delay(1500);
-
-    robot.stop();
-    delay(1000);
-
-    robot.moveRobot(200, 45, 0);
-    delay(1500);
-
-    robot.stop();
-    delay(1000);
 }
