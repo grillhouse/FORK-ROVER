@@ -52,10 +52,10 @@ void loop() {
         omniDrive.moveRobot(-1.0, 0, 0);
     } else if (currentTime < 4 * delayTime) { //Vx = 0, Vy = -1.0 m/s, omega = 0 rad/s
         omniDrive.moveRobot(0, -1.0, 0);
-    } else if (currentTime < 5 * delayTime) {   //rotation 2 rad/s
-        omniDrive.moveRobot(0, 0, 2.0);
-    } else if (currentTime < 6 * delayTime) {   //rotation -2 rad/s
-        omniDrive.moveRobot(0, 0, -2.0);
+    } else if (currentTime < 5 * delayTime) {   //rotation 0.1 rad/s
+        omniDrive.moveRobot(0, 0, 0.1);
+    } else if (currentTime < 6 * delayTime) {   //rotation -0.1 rad/s
+        omniDrive.moveRobot(0, 0, -0.01);
     } else if (currentTime < 7 * delayTime){    //reset robot and stop moving
         currentTime = 0;
         omniDrive.stop();
