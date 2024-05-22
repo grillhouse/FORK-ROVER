@@ -1,5 +1,5 @@
-#ifndef HolonomicRobot_h
-#define HolonomicRobot_h
+#ifndef HOLONOMICROBOT_H
+#define HOLONOMICROBOT_H
 
 #include <ESP32MX1508.h>
 #include <ESP32Encoder.h>
@@ -14,20 +14,34 @@ public:
     void setPIDTunings(double kp, double ki, double kd);
 
 private:
-    MX1508 _motor1;
-    MX1508 _motor2;
-    MX1508 _motor3;
-    ESP32Encoder _encoder1;
-    ESP32Encoder _encoder2;
-    ESP32Encoder _encoder3;
+    // Motor objects
+    ESP32MX1508 _motor1;
+    ESP32MX1508 _motor2;
+    ESP32MX1508 _motor3;
+
+    // PID control variables
+    double _input1, _output1, _setpoint1;
+    double _input2, _output2, _setpoint2;
+    double _input3, _output3, _setpoint3;
     PID _pid1;
     PID _pid2;
     PID _pid3;
-    double _setpoint1, _input1, _output1;
-    double _setpoint2, _input2, _output2;
-    double _setpoint3, _input3, _output3;
-    long _prevEncoderCount1, _prevEncoderCount2, _prevEncoderCount3;
+
+    // Encoder objects
+    ESP32Encoder _encoder1;
+    ESP32Encoder _encoder2;
+    ESP32Encoder _encoder3;
+
+    // Previous encoder counts
+    long _prevEncoderCount1;
+    long _prevEncoderCount2;
+    long _prevEncoderCount3;
+
+    // Last time the moveRobot function was called
     unsigned long _lastTime;
+
+    // Helper function for mapping float values
+    static float fmap(float x, float in_min, float in_max, float out_min, float out_max);
 };
 
-#endif
+#endif // HOLONOMICROBOT_H

@@ -10,7 +10,8 @@ HolonomicRobot::HolonomicRobot(int pin1A, int pin1B, int pin2A, int pin2B, int p
       _pid3(&_input3, &_output3, &_setpoint3, 0, 0, 0, DIRECT),
       _lastTime(0) {}
 
-void HolonomicRobot::begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A, int enc3B) {
+void HolonomicRobot::begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A, int enc3B)
+{
     _encoder1.attachHalfQuad(enc1A, enc1B);
     _encoder2.attachHalfQuad(enc2A, enc2B);
     _encoder3.attachHalfQuad(enc3A, enc3B);
@@ -20,21 +21,23 @@ void HolonomicRobot::begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A
     _lastTime = millis();
 }
 
-void HolonomicRobot::moveRobot(float magnitude, float theta, int rot) {
-    theta = theta * 0.0174533; // deg to rad
-    float vel_x = magnitude * cos(theta); // cartesian 
+void HolonomicRobot::moveRobot(float magnitude, float theta, int rot)
+{
+    theta = theta * 0.0174533;            // deg to rad
+    float vel_x = magnitude * cos(theta); // cartesian
     float vel_y = magnitude * sin(theta);
-    const float sqrt3o2 = 1.0 * sqrt(3) / 2; // v from rcos to to cartesian
+    const float sqrt3o2 = sqrt(3) / 2.0; // v from rcos to cartesianF
+
     float v1 = -vel_x + rot;
     float v2 = 0.5 * vel_x - sqrt3o2 * vel_y + rot;
     float v3 = 0.5 * vel_x + sqrt3o2 * vel_y + rot;
 
-    _setpoint1 = map(abs(v1), 0, 100, 0, 255) * (v1 < 0 ? -1 : 1);
-    _setpoint2 = map(abs(v2), 0, 100, 0, 255) * (v2 < 0 ? -1 : 1);
-    _setpoint3 = map(abs(v3), 0, 100, 0, 255) * (v3 < 0 ? -1 : 1);
+    _setpoint1 = fmap(abs(v1), 0, 100, 50, 255) * (v1 < 0 ? -1 : 1);
+    _setpoint2 = fmap(abs(v2), 0, 100, 50, 255) * (v2 < 0 ? -1 : 1);
+    _setpoint3 = fmap(abs(v3), 0, 100, 50, 255) * (v3 < 0 ? -1 : 1);
 
     unsigned long currentTime = millis();
-    float deltaTime = (currentTime - _lastTime) / 1000.0; //secs
+    float deltaTime = (currentTime - _lastTime) / 1000.0; // secs
     _lastTime = currentTime;
 
     long encoderCount1 = _encoder1.getCount();
@@ -61,19 +64,54 @@ void HolonomicRobot::moveRobot(float magnitude, float theta, int rot) {
     int motorSpeed2 = constrain(_output2, -255, 255);
     int motorSpeed3 = constrain(_output3, -255, 255);
 
+
+    if (motorSpeed1 < 0)
+    {
+        motorSpeed1 = constrain(motorSpeed1, -255, -100);
+    }
+    else
+    {
+        motorSpeed1 = constrain(motorSpeed1, 100, 255);
+    }
+
+    if (motorSpeed2 < 0)
+    {
+        motorSpeed2 = constrain(motorSpeed2, -255, -100);
+    }
+    else
+    {
+        motorSpeed2 = constrain(motorSpeed2, 100, 255);
+    }
+
+    if (motorSpeed3 < 0)
+    {
+        motorSpeed3 = constrain(motorSpeed3, -255, -100);
+    }
+    else
+    {
+        motorSpeed3 = constrain(motorSpeed3, 100, 255);
+    }
+
     _motor1.motorGo(motorSpeed1);
     _motor2.motorGo(motorSpeed2);
     _motor3.motorGo(motorSpeed3);
 }
 
-void HolonomicRobot::stop() {
+void HolonomicRobot::stop()
+{
     _motor1.motorBrake();
     _motor2.motorBrake();
     _motor3.motorBrake();
 }
 
-void HolonomicRobot::setPIDTunings(double kp, double ki, double kd) {
+void HolonomicRobot::setPIDTunings(double kp, double ki, double kd)
+{
     _pid1.SetTunings(kp, ki, kd);
     _pid2.SetTunings(kp, ki, kd);
     _pid3.SetTunings(kp, ki, kd);
+}
+
+float fmap(float x, float in_min, float in_max, float out_min, float out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
