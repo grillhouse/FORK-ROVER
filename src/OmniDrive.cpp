@@ -43,7 +43,7 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     vector V(Vx, Vy);
 
     // Define wheel orientation vectors
-    vector F1(-1.000, 0.000);   // Vector pointing directly left
+    vector F1(-1.000, 0.000);   // Vector pointing directly left (360 degrees counter-clockwise)
     vector F2(0.500, -0.866);  // Vector pointing 120 degrees counter-clockwise
     vector F3(0.866, 0.500);   // Vector pointing 240 degrees counter-clockwise
 
@@ -89,8 +89,8 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     float rotations3 = (encoderCount3 - _prevEncoderCount3) / 2400.0;
 
     float speed1 = (rotations1 * r) / deltaTime; // Speed in m/s
-    float speed2 = (rotations2 * r) / deltaTime; // Speed in m/s
-    float speed3 = (rotations3 * r) / deltaTime; // Speed in m/s
+    float speed2 = (rotations2 * r) / deltaTime; 
+    float speed3 = (rotations3 * r) / deltaTime; 
 
     // Update previous encoder counts with the current counts
     _prevEncoderCount1 = encoderCount1;
@@ -108,13 +108,13 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     _pid2.Compute();
     _pid3.Compute();
 
-    // Constrain PID outputs to be within motor input range (-255 to 255). (Overflow prevention)
+    // Constrain PID outputs to be within motor input range (-255 to 255). (Overflow prevention of 8 bit PID object)
     int motorOutput1 = constrain(_output1, -255, 255);
     int motorOutput2 = constrain(_output2, -255, 255);
     int motorOutput3 = constrain(_output3, -255, 255);
 
     // Adjust motor outputs to account for min motor torque required to move the robot
-    motorOutput1 = (motorOutput1 == 0) ? 0 : adjustMotorOutput(motorOutput1, 50); // 50 is the minimum motor output
+    motorOutput1 = (motorOutput1 == 0) ? 0 : adjustMotorOutput(motorOutput1, 50); // PWM 50 is the minimum motor output for rotation
     motorOutput2 = (motorOutput2 == 0) ? 0 : adjustMotorOutput(motorOutput2, 50);
     motorOutput3 = (motorOutput3 == 0) ? 0 : adjustMotorOutput(motorOutput3, 50);
 
@@ -191,12 +191,13 @@ int OmniDrive::encoderCounts(int encoder, bool readWrite)
         }
         break;
     default:
-        return -1;
+        return -999;
         break;
     }
+    return -1;
 }
 
-// Print debug information to the serial monitor
+// Print debug information
 void OmniDrive::printDebugInfo()
 {
     Serial.print("Setpoints: ");
