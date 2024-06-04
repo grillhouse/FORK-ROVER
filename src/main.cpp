@@ -5,15 +5,18 @@
 #include "OmniDrive.h"
 
 // Motor pins
-const int motor1A = 4;
-const int motor1B = 16;
+const int motor1A = 4; //
+const int motor1B = 16; //
 const int motor2A = 21;
 const int motor2B = 19;
 const int motor3A = 27;
 const int motor3B = 26;
 
+const int motorArmA = 13;
+const int motorArmB = 12;
+
 // Encoder pins
-const int encoder1A = 15;   //yellow
+const int encoder1A = 15;   //Orange
 const int encoder1B = 2;    //white
 const int encoder2A = 22;
 const int encoder2B = 23;
