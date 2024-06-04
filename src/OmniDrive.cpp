@@ -1,8 +1,11 @@
+#include <Arduino.h>
 #include <ESP32MX1508.h>
 #include <ESP32Encoder.h>
 #include <PID_v1.h>
 #include "OmniDrive.h"
 #include "vecmath.h"
+
+//#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 // Constructor to initialize motor and PID instances
 OmniDrive::OmniDrive(int pin1A, int pin1B, int pin2A, int pin2B, int pin3A, int pin3B, float radius)
@@ -23,7 +26,7 @@ void OmniDrive::begin(int enc1A, int enc1B, int enc2A, int enc2B, int enc3A, int
     _pid2.SetMode(AUTOMATIC);
     _pid3.SetMode(AUTOMATIC);
     _lastTime = millis();
-    Serial.begin(115200);
+    
     Serial.println("OmniDrive initialized");
 }
 
@@ -60,7 +63,14 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     // Check if the calculated wheel speeds are within the physical limits
     if ((omega1 > 6) || (omega2 > 6) || (omega3 > 6) || (omega1 < -6) || (omega2 < -6) || (omega3 < -6)) {
         Serial.println("Vectors: ERROR!");
-        return;
+        Serial.print("omega1: ");
+        Serial.print(omega1);
+        Serial.print(", omega2: ");
+        Serial.print(omega2);
+        Serial.print(", omega3: ");
+        Serial.println(omega3);
+
+        // return;
     }
 
     // Set the desired speeds (setpoints) for PID controllers
@@ -102,6 +112,13 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     _input1 = speed1*S;
     _input2 = speed2*S;
     _input3 = speed3*S;
+    Serial.print("Speeds: ");
+    Serial.print(_input1);
+    Serial.print(", ");
+    Serial.print(_input2);
+    Serial.print(", ");
+    Serial.println(_input3);
+
 
     // Compute PID outputs to adjust motor speeds
     _pid1.Compute();
@@ -117,8 +134,16 @@ void OmniDrive::moveRobot(float Vx, float Vy, float omega)
     motorOutput1 = (motorOutput1 == 0) ? 0 : adjustMotorOutput(motorOutput1, 50); // PWM 50 is the minimum motor output for rotation
     motorOutput2 = (motorOutput2 == 0) ? 0 : adjustMotorOutput(motorOutput2, 50);
     motorOutput3 = (motorOutput3 == 0) ? 0 : adjustMotorOutput(motorOutput3, 50);
+    Serial.print("Motor outputs: ");
+    Serial.print(motorOutput1);
+    Serial.print(", ");
+    Serial.print(motorOutput2);
+    Serial.print(", ");
+    Serial.println(motorOutput3);
+
 
     // Drive the motors with the adjusted outputs
+
     _motor1.motorGo(motorOutput1);
     _motor2.motorGo(motorOutput2);
     _motor3.motorGo(motorOutput3);

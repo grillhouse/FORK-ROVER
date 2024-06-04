@@ -71,8 +71,9 @@ float getMeanPitch();
 
 
 void setup() {
-
-
+    Serial.begin(115200);
+    while(!Serial);
+    delay(1000);   
     angPID.SetMode(AUTOMATIC);
     angPID.SetOutputLimits(-255, 255); // Set the PID output limits between -255 and 255
     omniDrive.begin(encoder1A, encoder1B, encoder2A, encoder2B, encoder3A, encoder3B);

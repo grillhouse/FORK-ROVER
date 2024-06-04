@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-// #define PI = 3.14159265359; //probably uneeded as it is already defined in the cmath library
+
 
 class vector {
 public:
